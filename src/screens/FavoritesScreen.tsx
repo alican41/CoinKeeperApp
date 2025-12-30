@@ -1,36 +1,33 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, Text, SafeAreaView, RefreshControl } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { subscribeToFavorites } from '../services/userService';
-import { getCoinsByIds } from '../services/coinService'; // Yeni yazdığımız fonksiyon
+import { getCoinsByIds } from '../services/coinService';
 import CoinItem from '../components/CoinItem';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Coin } from '../types/coin';
+// SafeAreaView'i buradan almaya devam et
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const FavoritesScreen = () => {
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp>();
   
-  // firestoreData: Veritabanındaki kayıtlı (eski fiyatlı) veri
   const [firestoreData, setFirestoreData] = useState<any[]>([]);
-  // displayData: Ekrana basacağımız (güncel fiyatlı) veri
   const [displayData, setDisplayData] = useState<Coin[]>([]);
-  
   const [refreshing, setRefreshing] = useState(false);
 
-  // 1. Adım: Firestore'u Dinle (Hangi coinler favori?)
   useEffect(() => {
     if (!user) return;
 
     const unsubscribe = subscribeToFavorites(user.uid, (data) => {
       setFirestoreData(data);
-      // İlk başta Firestore verisini göster (Hızlı açılış için)
-      // Daha sonra API'den günceli gelince değişecek.
       setDisplayData(data); 
       
-      // ID listesini çıkarıp güncel fiyatları iste
       const ids = data.map(item => item.id);
       fetchFreshPrices(ids);
     });
@@ -38,48 +35,23 @@ const FavoritesScreen = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // 2. Adım: Güncel Fiyatları Çekme Fonksiyonu
   const fetchFreshPrices = async (ids: string[]) => {
-    console.log("--- API GÜNCELLEMESİ BAŞLIYOR ---");
-    console.log("İstenen ID'ler:", ids);
-
+    // Logları temizledim, kodun daha temiz dursun
     if (ids.length === 0) {
-      console.log("Liste boş, istek atılmıyor.");
       setDisplayData([]);
       return;
     }
 
     try {
-      // Servis fonksiyonunun içini de loglayalım
       const freshCoins = await getCoinsByIds(ids);
-      
-      console.log("API Cevabı Geldi. Coin Sayısı:", freshCoins.length);
-      
       if (freshCoins.length > 0) {
-        console.log("Örnek Fiyat (API):", freshCoins[0].current_price);
-        console.log("Örnek Fiyat (Firestore):", firestoreData[0]?.current_price);
-        
-        // State'i güncelle
         setDisplayData(freshCoins);
-      } else {
-        console.log("API boş veri döndü!");
       }
-
     } catch (error: any) {
-      // Hatanın detayını görelim
-      console.error("!!! API HATASI !!!");
-      if (error.response) {
-        console.error("Status Code:", error.response.status); // 429 ise limit dolmuştur
-        console.error("Hata Mesajı:", error.response.data);
-      } else {
-        console.error("Hata:", error.message);
-      }
-      
       console.log("Eski fiyatlar gösterilmeye devam ediliyor.");
     }
   };
 
-  // Pull-to-Refresh (Elle güncellemek isterse)
   const onRefresh = async () => {
     setRefreshing(true);
     const ids = firestoreData.map(item => item.id);
@@ -92,11 +64,10 @@ const FavoritesScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favorilerim</Text>
-      </View>
-      
+    // DÜZELTME BURADA: edges prop'u ile 'top' değerini çıkardık.
+    // Böylece üstteki gereksiz boşluk (StatusBar koruması) kalktı.
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    
       <FlatList
         data={displayData}
         keyExtractor={(item) => item.id}
@@ -111,6 +82,8 @@ const FavoritesScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2196F3" />
         }
+        // Ekstra: Listenin en tepesine minik bir boşluk verelim ki tamamen yapışmasın (Estetik)
+        contentContainerStyle={{ paddingTop: 10 }}
       />
     </SafeAreaView>
   );
@@ -118,8 +91,6 @@ const FavoritesScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#333' },
   emptyContainer: { marginTop: 100, alignItems: 'center' },
   emptyText: { color: '#888', fontSize: 16 }
 });

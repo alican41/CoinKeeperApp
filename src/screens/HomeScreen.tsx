@@ -109,7 +109,7 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       
       {/* Arama Çubuğu */}
       <View style={styles.searchContainer}>
@@ -153,7 +153,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    margin: 10,
+    marginHorizontal: 15,
+    marginTop: 10, 
+    marginBottom: 10,
     paddingHorizontal: 15,
     borderRadius: 10,
     height: 50,
