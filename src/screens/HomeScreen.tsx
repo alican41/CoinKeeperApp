@@ -8,6 +8,9 @@ import { RootStackParamList } from '../types/navigation';
 import { getMarketCoins } from '../services/coinService';
 import { Coin } from '../types/coin';
 import CoinItem from '../components/CoinItem';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { Button } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,6 +58,17 @@ const HomeScreen = () => {
     }
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Button 
+          onPress={() => signOut(auth)} 
+          title="Çıkış" 
+          color="#ff0000" 
+        />
+      ),
+    });
+  }, [navigation]);
   useEffect(() => {
     loadData(1, true);
   }, []);
