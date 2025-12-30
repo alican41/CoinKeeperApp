@@ -1,59 +1,123 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text, RefreshControl } from 'react-native';
+// DÜZELTME 1: SafeAreaView'i buradan import ediyoruz (Hata gidecek)
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import { getMarketCoins } from '../services/coinService'; // Servisi çağırdık
-import { Coin } from '../types/coin'; // Tipi çağırdık
+import { getMarketCoins } from '../services/coinService';
+import { Coin } from '../types/coin';
+import CoinItem from '../components/CoinItem';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   
-  // State tanımları (Mülakatta generic tipleri <Coin[]> belirtmek önemli!)
   const [coins, setCoins] = useState<Coin[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false); // Hata durumu kontrolü
 
-  // Sayfa açıldığında çalışacak kod
-  useEffect(() => {
-    fetchCoins();
-  }, []);
+  const loadData = async (pageNum: number, shouldRefresh: boolean = false) => {
+    // Eğer zaten yükleniyorsa veya hata aldıysak (429) tekrar deneme (Koruma)
+    if (loading) return;
+    
+    setLoading(true);
+    setHasError(false);
 
-  const fetchCoins = async () => {
     try {
-      setLoading(true);
-      const data = await getMarketCoins();
-      console.log('Gelen Veri (İlk Coin):', data[0]); // Konsolda görelim
-      setCoins(data);
-    } catch (error) {
-      console.error('Veri çekilemedi');
+      const data = await getMarketCoins(pageNum);
+      
+      if (shouldRefresh) {
+        setCoins(data);
+      } else {
+        // Eski verilerin üzerine ekle, ama aynı ID'li veri varsa ekleme (Duplicate key hatasını önler)
+        setCoins(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const uniqueNewData = data.filter(c => !existingIds.has(c.id));
+          return [...prev, ...uniqueNewData];
+        });
+      }
+      setPage(pageNum);
+    } catch (error: any) {
+      // 429 hatasını özel olarak yakala
+      if (error.response && error.response.status === 429) {
+        console.warn("API Kotası Doldu! Biraz bekleyin.");
+        setHasError(true); 
+      } else {
+        console.error(error);
+      }
     } finally {
-      setLoading(false); // Hata olsa da olmasa da yükleniyor ikonunu kapat
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  useEffect(() => {
+    loadData(1, true);
+  }, []);
+
+  const handleLoadMore = () => {
+    // Hata varsa veya yükleniyorsa yeni istek atma
+    if (!loading && !hasError) {
+      loadData(page + 1);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setHasError(false); // Yenileyince hatayı sıfırla
+    loadData(1, true);
+  }, []);
+
+  const handlePress = useCallback((coinId: string) => {
+    navigation.navigate('Detail', { coinId });
+  }, [navigation]);
+
+  const renderItem = ({ item }: { item: Coin }) => (
+    <CoinItem coin={item} onPress={handlePress} />
+  );
+
+  const renderFooter = () => {
+    if (hasError) {
+      return (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <Text style={{ color: 'red' }}>Çok hızlı işlem yapıldı. Lütfen bekleyin.</Text>
+        </View>
+      );
+    }
+    if (loading && coins.length > 0) {
+      return (
+        <View style={{ paddingVertical: 20 }}>
+          <ActivityIndicator size="small" color="#2196F3" />
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : (
-        <>
-          <Text>Coin Sayısı: {coins.length}</Text>
-          <Text>İlk Coin: {coins[0]?.name} - ${coins[0]?.current_price}</Text>
-          
-          <Button 
-            title="Detaya Git" 
-            onPress={() => navigation.navigate('Detail', { coinId: coins[0]?.id || 'bitcoin' })} 
-          />
-        </>
-      )}
-    </View>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <FlatList
+        data={coins}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        onEndReached={handleLoadMore}
+        // DÜZELTME 2: Threshold'u biraz düşürdük, kullanıcı tam dibe gelince yüklesin ki API şişmesin
+        onEndReachedThreshold={0.2} 
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2196F3" />
+        }
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' }
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
 });
 
 export default HomeScreen;
