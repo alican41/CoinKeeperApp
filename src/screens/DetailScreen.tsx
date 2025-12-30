@@ -13,13 +13,13 @@ const DetailScreen = () => {
   const route = useRoute<DetailScreenRouteProp>();
   const navigation = useNavigation();
   const { coinId } = route.params;
-  const { user } = useAuth(); // Kullanıcı ID'sini almak için
+  const { user } = useAuth();
 
   const [coin, setCoin] = useState<CoinDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Açıklama metni için
 
-  // 1. Coin detaylarını API'den çek
   useEffect(() => {
     navigation.setOptions({ title: coinId.toUpperCase() });
     fetchDetail();
@@ -30,28 +30,21 @@ const DetailScreen = () => {
       const data = await getCoinDetail(coinId);
       setCoin(data);
     } catch (error) {
-      console.error(error);
       Alert.alert('Hata', 'Coin detayları alınamadı.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Favori Durumunu Dinle (Realtime)
   useEffect(() => {
     if (!user) return;
-
-    // Firestore'u dinlemeye başlıyoruz. Coin listede var mı yok mu?
     const unsubscribe = subscribeToFavorites(user.uid, (favs) => {
       const exists = favs.some((c: any) => c.id === coinId);
       setIsFavorite(exists);
     });
-
-    // Sayfadan çıkınca dinlemeyi bırak
     return () => unsubscribe();
   }, [user, coinId]);
 
-  // 3. Header'a Kalp Butonunu Ekle
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -60,12 +53,10 @@ const DetailScreen = () => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isFavorite, coin]); // coin ve isFavorite değişince buton güncellensin
+  }, [navigation, isFavorite, coin]);
 
-  // 4. Favori Ekleme/Çıkarma Mantığı
   const handleToggleFavorite = async () => {
     if (!user || !coin) return;
-
     try {
       if (isFavorite) {
         await removeFavorite(user.uid, coin.id);
@@ -102,7 +93,7 @@ const DetailScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Başlık ve Resim */}
+      {/* Header */}
       <View style={styles.header}>
         <Image source={{ uri: coin.image.large }} style={styles.image} />
         <Text style={styles.name}>{coin.name}</Text>
@@ -131,14 +122,25 @@ const DetailScreen = () => {
 
       {/* Açıklama */}
       <Text style={styles.sectionTitle}>Hakkında</Text>
-      <Text style={styles.description}>
-        {removeHtmlTags(coin.description.en).substring(0, 300)}...
-      </Text>
+      <View style={styles.descriptionContainer}>
+        <Text style={styles.description}>
+          {isExpanded 
+            ? removeHtmlTags(coin.description.en) 
+            : removeHtmlTags(coin.description.en).substring(0, 300) + (coin.description.en.length > 300 ? '...' : '')}
+        </Text>
+        
+        {removeHtmlTags(coin.description.en).length > 300 && (
+          <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={styles.readMoreButton}>
+            <Text style={styles.readMoreText}>
+              {isExpanded ? 'Daha Az Göster' : 'Devamını Oku'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </ScrollView>
   );
 };
 
-// Yardımcı Bileşen
 const StatCard = ({ title, value }: { title: string, value: string }) => (
   <View style={styles.statCard}>
     <Text style={styles.statTitle}>{title}</Text>
@@ -162,7 +164,10 @@ const styles = StyleSheet.create({
   statCard: { width: '31%', backgroundColor: '#f8f9fa', padding: 12, borderRadius: 12, marginBottom: 10, alignItems: 'center' },
   statTitle: { fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'center' },
   statValue: { fontSize: 13, fontWeight: '600', color: '#333', textAlign: 'center' },
-  description: { marginHorizontal: 16, fontSize: 14, color: '#555', lineHeight: 22 },
+  descriptionContainer: { paddingHorizontal: 16, marginBottom: 20 },
+  description: { fontSize: 14, color: '#555', lineHeight: 22 },
+  readMoreButton: { marginTop: 8, alignSelf: 'flex-start' },
+  readMoreText: { color: '#2196F3', fontWeight: 'bold', fontSize: 14 },
 });
 
 export default DetailScreen;
