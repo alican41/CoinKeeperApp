@@ -11,6 +11,8 @@ import CoinItem from '../components/CoinItem';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Button } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -60,15 +62,15 @@ const HomeScreen = () => {
 
   useEffect(() => {
     navigation.setOptions({
+      title: 'Piyasalar', // Başlığı da güzelleştirelim
       headerRight: () => (
-        <Button 
-          onPress={() => signOut(auth)} 
-          title="Çıkış" 
-          color="#ff0000" 
-        />
+        <TouchableOpacity onPress={() => signOut(auth)} style={{ marginRight: 10 }}>
+          <Ionicons name="log-out-outline" size={24} color="#f44336" />
+        </TouchableOpacity>
       ),
     });
   }, [navigation]);
+  
   useEffect(() => {
     loadData(1, true);
   }, []);

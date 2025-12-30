@@ -1,103 +1,144 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { Ionicons } from '@expo/vector-icons'; // İkon ekledik
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isLogin, setIsLogin] = useState(true); // Giriş modunda mı Kayıt modunda mı?
+  const [isLogin, setIsLogin] = useState(true);
 
-  // Firebase İşlemleri
   const handleAuth = async () => {
     if (!email || !password) {
-      Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+      Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
       return;
     }
-
     setLoading(true);
     try {
       if (isLogin) {
-        // Giriş Yap
         await signInWithEmailAndPassword(auth, email, password);
-        // Başarılı olursa navigation yapmaya gerek yok, Context otomatik algılayıp sayfayı değiştirecek!
       } else {
-        // Kayıt Ol
         await createUserWithEmailAndPassword(auth, email, password);
-        Alert.alert('Başarılı', 'Hesap oluşturuldu, hoşgeldiniz!');
+        Alert.alert('Tebrikler', 'Hesabınız oluşturuldu!');
       }
     } catch (error: any) {
-      // Hata mesajlarını Türkçeleştirmek mülakatta artı puandır
-      let msg = error.message;
-      if (msg.includes('invalid-email')) msg = 'Geçersiz email formatı.';
-      if (msg.includes('user-not-found')) msg = 'Kullanıcı bulunamadı.';
-      if (msg.includes('wrong-password')) msg = 'Hatalı şifre.';
-      if (msg.includes('email-already-in-use')) msg = 'Bu email zaten kullanımda.';
-      
-      Alert.alert('Hata', msg);
+      Alert.alert('Hata', error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>{isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Şifre"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleAuth}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.buttonText}>{isLogin ? 'GİRİŞ YAP' : 'KAYIT OL'}</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Mod Değiştirme (Login <-> Register) */}
-        <TouchableOpacity onPress={() => setIsLogin(!isLogin)} style={styles.switchButton}>
-          <Text style={styles.switchText}>
-            {isLogin ? 'Hesabın yok mu? Kayıt Ol' : 'Zaten hesabın var mı? Giriş Yap'}
-          </Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Arka plan süslemesi (Üst kısım) */}
+      <View style={styles.headerBackground}>
+        <Ionicons name="stats-chart" size={80} color="white" style={{ opacity: 0.9 }} />
+        <Text style={styles.appTitle}>CoinKeeper</Text>
+        <Text style={styles.appSubtitle}>Portföyünü Yönet</Text>
       </View>
-    </KeyboardAvoidingView>
+
+      {/* Form Alanı */}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>{isLogin ? 'Hoşgeldiniz' : 'Hesap Oluştur'}</Text>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="E-posta Adresi"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Şifre"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleAuth} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.buttonText}>{isLogin ? 'GİRİŞ YAP' : 'KAYIT OL'}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setIsLogin(!isLogin)} style={styles.switchButton}>
+            <Text style={styles.switchText}>
+              {isLogin ? 'Hesabın yok mu? ' : 'Zaten üye misin? '}
+              <Text style={styles.switchTextBold}>{isLogin ? 'Kayıt Ol' : 'Giriş Yap'}</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', backgroundColor: '#f5f5f5', padding: 20 },
-  formContainer: { backgroundColor: 'white', padding: 20, borderRadius: 10, elevation: 5 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
-  input: { backgroundColor: '#f9f9f9', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
-  button: { backgroundColor: '#2196F3', padding: 15, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  switchButton: { marginTop: 15, alignItems: 'center' },
-  switchText: { color: '#2196F3', fontSize: 14 }
+  container: { flex: 1, backgroundColor: '#f0f2f5' },
+  headerBackground: {
+    height: '40%',
+    backgroundColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  appTitle: { fontSize: 32, fontWeight: 'bold', color: 'white', marginTop: 10 },
+  appSubtitle: { fontSize: 16, color: '#e3f2fd', marginTop: 5 },
+  keyboardView: { flex: 1, marginTop: -50, paddingHorizontal: 20 },
+  formCard: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  formTitle: { fontSize: 22, fontWeight: 'bold', color: '#333', marginBottom: 20, textAlign: 'center' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 20,
+    paddingBottom: 5,
+  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16, color: '#333', paddingVertical: 8 },
+  button: {
+    backgroundColor: '#2196F3',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  switchButton: { marginTop: 20, alignItems: 'center' },
+  switchText: { color: '#666', fontSize: 14 },
+  switchTextBold: { color: '#2196F3', fontWeight: 'bold' },
 });
 
 export default LoginScreen;

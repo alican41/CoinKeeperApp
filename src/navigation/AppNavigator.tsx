@@ -10,6 +10,7 @@ import DetailScreen from '../screens/DetailScreen';
 import LoginScreen from '../screens/LoginScreen'; // Yeni ekran
 import { RootStackParamList, RootTabParamList } from '../types/navigation';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -17,10 +18,38 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // Giriş yapmış kullanıcının göreceği Tab yapısı
 function MainTabs() {
   return (
-    <Tab.Navigator>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      {/* Favorites daha sonra eklenecek */}
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        // Aktif ve Pasif İkon Renkleri
+        tabBarActiveTintColor: '#2196F3',
+        tabBarInactiveTintColor: 'gray',
+        // İkonu belirleme fonksiyonu
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap;
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Favorites') {
+            iconName = focused ? 'heart' : 'heart-outline';
+          } else {
+            iconName = 'alert';
+          }
+
+          // İkonu döndür
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ title: 'Piyasalar' }} // Sekme adı Türkçe olsun
+      />
+      <Tab.Screen 
+        name="Favorites" 
+        component={FavoritesScreen} 
+        options={{ title: 'Favorilerim' }} 
+      />
     </Tab.Navigator>
   );
 }
