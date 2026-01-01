@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
-import { getCoinDetail } from '../services/coinService';
-import { CoinDetail } from '../types/coin';
 import { addFavorite, removeFavorite, subscribeToFavorites } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
+import { useCoinDetail } from '../hooks/useCoins';
 
 type DetailScreenRouteProp = RouteProp<RootStackParamList, 'Detail'>;
 
@@ -15,36 +14,30 @@ const DetailScreen = () => {
   const { coinId } = route.params;
   const { user } = useAuth();
 
-  const [coin, setCoin] = useState<CoinDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false); // Açıklama metni için
+  const { data: coin, isLoading, isError } = useCoinDetail(coinId);
 
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // 1. Başlık Ayarı (Senkron çalışır, beklemez)
   useEffect(() => {
     navigation.setOptions({ title: coinId.toUpperCase() });
-    fetchDetail();
   }, [coinId]);
 
-  const fetchDetail = async () => {
-    try {
-      const data = await getCoinDetail(coinId);
-      setCoin(data);
-    } catch (error) {
-      Alert.alert('Hata', 'Coin detayları alınamadı.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 2. Favori Durumunu Dinle (Firebase - Realtime)
+  // Bu kısım API'den bağımsız olduğu için Query içine almadık, ayrı çalışır.
   useEffect(() => {
     if (!user) return;
+
     const unsubscribe = subscribeToFavorites(user.uid, (favs) => {
       const exists = favs.some((c: any) => c.id === coinId);
       setIsFavorite(exists);
     });
+
     return () => unsubscribe();
   }, [user, coinId]);
 
+  // 3. Header'a Kalp Butonunu Ekle
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -53,10 +46,13 @@ const DetailScreen = () => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isFavorite, coin]);
+  }, [navigation, isFavorite, coin]); // coin yüklendiğinde buton aktif olsun
 
+  // 4. Favori Ekleme/Çıkarma Mantığı
   const handleToggleFavorite = async () => {
+    // Coin verisi henüz gelmediyse veya kullanıcı yoksa işlem yapma
     if (!user || !coin) return;
+
     try {
       if (isFavorite) {
         await removeFavorite(user.uid, coin.id);
@@ -73,7 +69,9 @@ const DetailScreen = () => {
     return str.replace(/<[^>]*>?/gm, '');
   };
 
-  if (loading) {
+  // --- UI RENDER KISMI ---
+
+  if (isLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#2196F3" />
@@ -81,10 +79,10 @@ const DetailScreen = () => {
     );
   }
 
-  if (!coin) {
+  if (isError || !coin) {
     return (
       <View style={styles.center}>
-        <Text>Veri bulunamadı.</Text>
+        <Text>Veri yüklenemedi veya internet bağlantısı yok.</Text>
       </View>
     );
   }
