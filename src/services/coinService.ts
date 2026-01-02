@@ -48,3 +48,19 @@ export const getCoinsByIds = async (coinIds: string[]): Promise<Coin[]> => {
   });
   return response.data;
 };
+
+export const getCoinMarketChart = async (id: string): Promise<number[][]> => {
+  try {
+    const response = await api.get(`/coins/${id}/market_chart`, {
+      params: {
+        vs_currency: 'usd',
+        days: '1', 
+      },
+    });
+    // Burada hata alıyorsan API yapısı değişmiş olabilir, logla.
+    return response.data.prices;
+  } catch (error) {
+    console.error("Grafik verisi çekilemedi:", error);
+    return []; // Hata olursa boş dizi döndür ki ekran çökmesin
+  }
+};
