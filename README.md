@@ -17,7 +17,7 @@
 
 | Login / Auth | Market List | Coin Detail | Favorites |
 |:---:|:---:|:---:|:---:|
-| ![login](https://github.com/user-attachments/assets/cb7d2eac-1e33-4606-83dd-1985ca3e1fe4) |  ![Piyasalar](https://github.com/user-attachments/assets/78f55664-3fbd-4199-9f51-2ee25d14f0ad) | ![Detay](https://github.com/user-attachments/assets/0502ad68-d829-4624-a676-70677082b0aa) | ![Favoriler](https://github.com/user-attachments/assets/e600ff0c-ed16-4a92-8063-1f76458da58b) |
+| ![login](https://github.com/user-attachments/assets/cb7d2eac-1e33-4606-83dd-1985ca3e1fe4) |  ![Piyasalar](https://github.com/user-attachments/assets/78f55664-3fbd-4199-9f51-2ee25d14f0ad) |![detay](https://github.com/user-attachments/assets/f67b7325-2a87-4eb2-a7ce-870fb68f3c5f)| ![Favoriler](https://github.com/user-attachments/assets/e600ff0c-ed16-4a92-8063-1f76458da58b) |
 
 ---
 
