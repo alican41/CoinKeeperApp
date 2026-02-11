@@ -1,4 +1,4 @@
-# 🪙 CoinKeeper
+#  CoinKeeper
 
 <div align="center">
   <img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
@@ -21,7 +21,7 @@
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 * **Authentication Flow:** Secure Email/Password login and registration using **Firebase Auth**.
 * **Real-time Market Data:** Integration with **CoinGecko API** to fetch live prices, market caps, and volume data.
@@ -34,7 +34,7 @@
 
 ---
 
-## 🛠 Tech Stack & Architecture
+##  Tech Stack & Architecture
 
 * **Core:** React Native (Expo SDK), TypeScript
 * **Navigation:** React Navigation (Stack & Bottom Tabs)
@@ -59,7 +59,7 @@ src/
 
 ---
 
-## ⚙️ Installation & Setup
+##  Installation & Setup
 
 1.  **Clone the repository**
     ```bash
