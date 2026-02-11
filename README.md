@@ -36,13 +36,13 @@
 
 ##  Tech Stack & Architecture
 
-* **Core:** React Native (Expo SDK), TypeScript
-* **Navigation:** React Navigation (Stack & Bottom Tabs)
-* **State Management:** React Context API (Auth Flow)
-* **Network:** Axios (Service Layer Pattern)
-* **Backend-as-a-Service:** Firebase (Authentication, Firestore)
-* **Storage:** AsyncStorage (Local Caching)
-* **UI/UX:** StyleSheet, Vector Icons, Safe Area Context
+* **Core:** React Native (Expo SDK), TypeScript.
+* **Navigation:** React Navigation (Stack & Bottom Tabs).
+* **State Management:** React Context API (Auth Flow).
+* **Network:** Axios (Service Layer Pattern).
+* **Backend-as-a-Service:** Firebase (Authentication, Firestore).
+* **Storage:** AsyncStorage (Local Caching).
+* **UI/UX:** StyleSheet, Vector Icons, Safe Area Context.
 
 ### Project Structure (Clean Architecture)
 
