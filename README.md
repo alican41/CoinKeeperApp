@@ -13,7 +13,7 @@
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 | Login / Auth | Market List | Coin Detail | Favorites |
 |:---:|:---:|:---:|:---:|
